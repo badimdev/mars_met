@@ -1,0 +1,23 @@
+Mars Met is a web app based on Django coded for Nasa's International Space Apps Challenge 2013.
+
+The first version was coded in about 10 hours by the following developers:
+
+- Ander Goiriena
+- Mikel Díaz de Arcaya
+- Diego Gil
+- Iñigo Hernáez
+
+We would also like to thank Borja Pérez for his invaluable help.
+
+Some other necessary resources not included in this repo:
+
+- Django (pip install django)
+- SQL Alchemy (pip install SQLAlchemy)
+
+Additional remarks:
+
+- A PostgreSQL database called "mars_met" must be created. If another name is used, some files may have to be edited.
+
+- The data parser code and the setting.py file of the Django server must be edited to include actual database user and passwords.
+
+Enjoy it!

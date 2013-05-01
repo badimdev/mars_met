@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <title>Mars Met: Mars Weather</title>
+    <link rel="icon" href="{{STATIC_URL}}img/favicon.ico" type="image/x-icon" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mars Weather">
+    <meta name="author" content="DIMA Corp.">
+
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <link href="{{STATIC_URL}}css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{STATIC_URL}}css/jquery.dataTables.css" rel="stylesheet">
+    <link href="{{STATIC_URL}}css/jquery-ui-1.8.4.custom.css" rel="stylesheet">
+    <link href="{{STATIC_URL}}css/jquery.dataTables_themeroller.css" rel="stylesheet">
+
+    <script src="{{STATIC_URL}}js/jquery-1.9.1.min.js"></script>
+    <script src="{{STATIC_URL}}js/jquery-ui-1.10.1.custom.min.js"></script>
+    <script src="{{STATIC_URL}}js/jquery.dataTables.min.js"></script>
+    <script src="{{ STATIC_URL }}js/highcharts.js" type="text/javascript"></script>
+    <script src="{{ STATIC_URL }}js/exporting.js" type="text/javascript"></script>
+    <script src="{{ STATIC_URL }}js/highcharts-more.js" type="text/javascript"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+        oTable = $('#dataTable').dataTable({
+          "bJQueryUI": true,
+          "sPaginationType": "full_numbers",
+          "sScrollX": "100%",
+          "aaSorting": [[ 0, "desc" ]],
+        });
+      } );
+    </script>
+    <style>
+      .graphic {
+        height: 500px;
+        margin-left: 2.5%;
+        margin-bottom: 2.5%;
+        margin-top: 2.5%;
+        margin-right: 2.5%;
+        background: url({{STATIC_URL}}img/fondo_estrellas.png) repeat;
+      }
+      .tabla-padding{
+        padding: 50px; 
+      }
+      body  {
+        min-height: 2200;
+        background-image: -webkit-gradient(linear, 0 0%, 0 100%, from(#000000), to(#FF7D26));
+        background-image: -webkit-linear-gradient(top, #000000 0%, #FF7D26 100%);
+        background-image: -moz-linear-gradient(top, #000000 0%, #FF7D26 100%);
+        background-image: -ms-linear-gradient(top, #000000 0%, #FF7D26 100%);
+        background-image: -o-linear-gradient(top, #000000 0%, #FF7D26 100%);
+        background-image: linear-gradient(top, #000000 0%, #FF7D26 100%);
+      }
+    </style>
+
+  </head>
+  <body>
+    <header class="tabla-padding" id="overview">
+      <img src="{{STATIC_URL}}img/logo.png" alt="" />
+    </header>
+  <div class="row-fluid">
+    <div class="span8">
+      <!--<div class="graphic" id="line_chart"></div>-->
+      <div class="graphic" id="data_chart"></div>
+    </div>
+    <div class="span4">
+      <div class="graphic" id="sol_pos_chart"></div>
+    </div>
+  </div>
+  <div class="row-fluid">
+    <div class="span8">
+      <div class="graphic" id="hist_pos_chart"></div>
+    </div>
+    <div class="span4">
+      <div class="graphic" id="bar_chart"></div>
+    </div>
+  </div>
+  <div class="row-fluid">
+    <div class="span12 tabla-padding">
+        <table id="dataTable">
+          <thead>
+            <th>Sol</th>
+            <th>Date</th>
+            <th>Min Temp</th>
+            <th>Max Temp</th>
+            <th>Pressure Value</th>
+            <th>Pressure Status</th>
+            <th>Abs Humidity</th>
+            <th>Wind Speed</th>
+            <th>Wind Direction</th>
+            <th>Atmo Opacity</th>
+            <th>Season</th>
+            <th>Solar Latitude</th>
+            <th>Sunrise</th>
+            <th>Sunset</th>
+            <th>Earth Position º</th>
+          </thead>
+          <tbody>
+            {% for item in mars_met_data %}
+            <tr>
+            <td>{{item.sol}}</td>
+            <td>{{item.sol.terrestrial_date|date:"SHORT_DATETIME_FORMAT"}}</td>
+            <td>{{item.min_temp}}</td>
+            <td>{{item.max_temp}}</td>
+            <td>{{item.pressure}}</td>
+            <td>{{item.pressure_string}}</td>
+            <td>{{item.abs_humidity}}</td>
+            <td>{{item.wind_speed}}</td>
+            <td>{{item.wind_direction}}</td>
+            <td>{{item.atmo_opacity}}</td>
+            <td>{{item.season}}</td>
+            <td>{{item.ls}}</td>
+            <td>{{item.sunrise}}</td>
+            <td>{{item.sunset}}</td>
+            <td>{{item.sol.earth_position.angle}}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>  
+  </body>
+  <script>
+
+    var chart1 = new Highcharts.Chart({
+    chart: {
+        renderTo: 'data_chart',
+        defaultSeriesType: 'series',
+        borderWidth:3,
+        borderColor:'#000000',
+        marginLeft:90,
+        marginRight:50,
+        backgroundColor:'#DBA135',
+        plotBackgroundColor:'#F5F6CE',
+        zoomType: 'x'
+    },
+    credits:{enabled:false},
+    title:{text:'Mars Temperature and Pressure Data',style:{color:'#000000'}},
+    subtitle:{text:'Curiosity MSL REMS Data',style:{color:'#000000', fontStyle:'italic'}},
+    legend:{borderColor:'#000000',backgroundColor:'#F5F6CE',itemStyle:{color:'#000000', fontStyle:'italic'}},
+    tooltip: {
+        formatter: function() {
+            return '<b>Sol: '+ this.x +'</b><br/>' + this.series.name + ': ' + this.y + this.series.yAxis.axisTitle.text;
+        }
+    },
+    plotOptions: {
+        series: {
+            connectNulls: false,
+            point: {
+                    events: {
+                        mouseOver: function() {
+                            chart3.series[0].setData([{x:chart2.series[0].data[this.x].x, 
+                                                        y:chart2.series[0].data[this.x].y,
+                                                        name:chart2.series[0].data[this.x].name}],true);
+                            chart3.series[1].setData([{x:chart2.series[1].data[this.x].x,
+                                                        y:chart2.series[1].data[this.x].y,
+                                                        name:chart2.series[1].data[this.x].name}],true);
+                            chart3.setTitle(chart3.title.title,
+                                            {text:'Selected Sol: ' + this.category, style:{color:'#FFFFFF', fontStyle:'italic'}}
+                                            , true);
+                            chart4.series[0].setData([chart1.series[0].data[this.x].y,],true);
+                            chart4.series[1].setData([chart1.series[1].data[this.x].y,],true);
+                            chart4.series[2].setData([chart1.series[2].data[this.x].y,],true);
+                            chart4.series[3].setData([chart1.series[3].data[this.x].y,],true);
+                            chart4.setTitle(chart4.title.title,
+                                            {text:'Selected Sol: ' + this.category, style:{color:'#000000', fontStyle:'italic'}}
+                                            , true);}
+                    }
+            }
+        }
+    },
+    xAxis:{
+        title:{text:'Sol',style:{color:'#000000'}},
+        labels:{step:10, style:{color:'#000000'}},
+        categories:[
+            {% for item in mars_met_data %}
+                    {{item.sol}},
+            {% endfor %}
+        ],
+    },
+    yAxis:[
+        {title:{text:'\u00b0C',style:{color:'#000000'}}, labels: {style:{color:'#000000'}}},
+        {opposite: true, title: {text: 'hPa',style:{color:'#000000'}}, labels: {style:{color:'#000000'}}}
+    ],
+    series: [{
+        name:'Min Temp',
+        color:'#2E2EFE',
+        yAxis:0,
+        xAxis:0,
+        zIndex:1,
+        type:'line',
+        marker:{
+            radius:2,
+            symbol:'circle',
+            color:'#2E2EFE'
+        },
+        data: [
+                {% for item in mars_met_data %}
+                        {{item.min_temp|stringformat:".2f"|default:"null"}},
+                {% endfor %}
+        ],
+    }, {
+        name:'Max Temp',
+        color:'#DF0101',
+        yAxis:0,
+        xAxis:0,
+        zIndex:1,
+        type:'line',
+        marker:{
+            radius:2,
+            symbol:'circle',
+            color:'#DF0101'
+        },
+        data: [
+                {% for item in mars_met_data %}
+                        {{item.max_temp|stringformat:".2f"|default:"null"}},
+                {% endfor %}
+        ],
+    }, {
+        name:'Avg Temp',
+        color:'#088A4B',
+        yAxis:0,
+        xAxis:0,
+        zIndex:1,
+        type:'line',
+        marker:{
+            radius:2,
+            symbol:'circle',
+            color:'#088A4B'
+        },
+        data: [
+                {% for item in mars_met_data %}
+                        {{item.avg_temp|stringformat:".2f"|default:"null"}},
+                {% endfor %}
+        ],
+    },{
+        name:'Pressure',
+        color:'#000000',
+        yAxis:1,
+        xAxis:0,
+        zIndex:1,
+        type:'line',
+        marker:{
+            radius:2,
+            symbol:'circle',
+            color:'#000000'
+        },
+        data: [
+                {% for item in mars_met_data %}
+                        {{item.pressure|stringformat:".2f"|default:"null"}},
+                {% endfor %}
+        ]
+      }]
+    });
+
+    var chart2 = new Highcharts.Chart({
+    chart: {
+        renderTo: 'hist_pos_chart',
+        defaultSeriesType:'scatter',
+        borderWidth:3,
+        borderColor:'#000000',
+        marginLeft:90,
+        marginRight:50,
+        backgroundColor:'transparent',
+        plotBackgroundColor:'transparent',
+        showAxes:false,
+    },
+    credits:{enabled:false},
+    title:{
+        text:'Mars and Earth positions relative to the Sun',
+        style:{color:'#FFFFFF'}
+    },
+    subtitle:{
+        text:'Complete Mission',
+        style:{color:'#FFFFFF', fontStyle:'italic'}
+    },
+    legend:{
+        enabled:false                                
+    },
+    tooltip: {
+        formatter: function() {
+            if(this.series.name == 'Sun'){
+                return '<b>'+ this.series.name +'</b>';
+            }
+            else{
+                return '<b>'+ this.series.name +'</b><br/>Solar Longitude: '+ this.point.name + '\u00b0';
+            }
+        }
+    },
+    plotOptions: {
+        series: {
+            shadow: false,
+            point: {
+                    events: {
+                        mouseOver: function() {
+                            chart3.series[0].setData([{x:chart2.series[0].data[this.id].x, 
+                                                        y:chart2.series[0].data[this.id].y,
+                                                        name:chart2.series[0].data[this.id].name}],true);
+                            chart3.series[1].setData([{x:chart2.series[1].data[this.id].x,
+                                                        y:chart2.series[1].data[this.id].y,
+                                                        name:chart2.series[1].data[this.id].name}],true);
+                            chart3.setTitle(chart3.title.title,
+                                                {text:'Selected Sol: ' + chart1.xAxis[0].categories[this.id], 
+                                                style:{color:'#FFFFFF', fontStyle:'italic'}}
+                                            , true);
+                            chart4.series[0].setData([chart1.series[0].data[this.id].y,],true);
+                            chart4.series[1].setData([chart1.series[1].data[this.id].y,],true);
+                            chart4.series[2].setData([chart1.series[2].data[this.id].y,],true);
+                            chart4.series[3].setData([chart1.series[3].data[this.id].y,],true);
+                            chart4.setTitle(chart4.title.title,
+                                                {text:'Selected Sol: ' + chart1.xAxis[0].categories[this.id], 
+                                                style:{color:'#000000', fontStyle:'italic'}}
+                                            , true);}
+                    }
+            }
+        }
+    },
+    xAxis:{
+        min:-2,
+        max: 2,
+        title:{
+            text:'AU',
+            style:{color:'#FFFFFF'}
+        },
+        tickInterval:0.5,
+        minorTickInterval:10,
+        tickLength:0,
+        minorTickLength:0,
+        gridLineWidth:1,
+        showLastLabel:true,
+        showFirstLabel:false,
+        lineColor:'#ccc',
+        lineWidth:1,
+        labels:{style:{color:'#FFFFFF'}}
+    },
+    yAxis:{
+        min:-2,
+        max: 2,
+        title:{
+            text:'AU',
+            style:{color:'#FFFFFF'},
+            rotation:0,
+            margin:25,
+        },
+        tickInterval:0.5,
+        minorTickInterval:10,
+        tickLength:3,
+        minorTickLength:0,
+        lineColor:'#ccc',
+        lineWidth:1,
+        labels:{style:{color:'#FFFFFF'}}
+    },
+    series: [{
+        name:'Earth',
+        color:'#185aa9',
+        marker:{
+            radius:1,
+            symbol:"url({{STATIC_URL}}img/earth_small.png)"
+        },
+        data: [
+                {% for item in mars_met_data %}
+                        {x:{{item.sol.earth_position.xAxis}},y:{{item.sol.earth_position.yAxis}},
+                        name:{{item.sol.earth_position.angle}},id:{{forloop.counter0}}},
+                {% endfor %}
+        ],
+    }, {
+        name:'Mars',
+        color:'#FF0000',
+        marker:{
+            radius:1,
+            symbol:"url({{STATIC_URL}}img/mars_small.png)"
+        },
+        data: [
+                {% for item in mars_met_data %}
+                        {x:{{item.mars_position.xAxis}},y:{{item.mars_position.yAxis}},
+                        name:{{item.mars_position.angle}},id:{{forloop.counter0}}},
+                {% endfor %}
+        ],
+    }, {
+          name:'Sun',
+          color:'#FF8000',
+          marker:{
+            radius:1,
+            symbol:"url({{STATIC_URL}}img/sun.png)"
+        },
+          data: [{x:0,y:0}]
+      },]
+});
+
+    var chart3 = new Highcharts.Chart({
+    chart: {
+        renderTo: 'sol_pos_chart',
+        defaultSeriesType:'scatter',
+        borderWidth:3,
+        borderColor:'#000000',
+        marginLeft:90,
+        marginRight:50,
+        backgroundColor:'transparent',
+        plotBackgroundColor:'transparent',
+        showAxes:false,
+    },
+    credits:{enabled:false},
+    title:{
+        text:'Mars and Earth positions relative to the Sun',
+        style:{color:'#FFFFFF'}
+    },
+    subtitle:{
+        text:'Selected Sol: ' + chart1.xAxis[0].categories[0],
+        style:{color:'#FFFFFF', fontStyle:'italic'}
+    },
+    legend:{
+        enabled:false                                
+    },
+    tooltip: {
+        formatter: function() {
+            if(this.series.name == 'Sun'){
+                return '<b>'+ this.series.name +'</b>';
+            }
+            else{
+                return '<b>'+ this.series.name +'</b><br/>Solar Longitude: '+ this.point.name + '\u00b0';
+            }
+        }
+    },
+    plotOptions: {
+        series: {
+            shadow:false,
+        }
+    },
+    xAxis:{
+        min:-2,
+        max: 2,
+        title:{
+            text:'AU',
+            style:{color:'#FFFFFF'}
+        },
+        tickInterval:0.5,
+        minorTickInterval:10,
+        tickLength:0,
+        minorTickLength:0,
+        gridLineWidth:1,
+        showLastLabel:true,
+        showFirstLabel:false,
+        lineColor:'#ccc',
+        lineWidth:0,
+        labels:{style:{color:'#FFFFFF'}}
+    },
+    yAxis:{
+        min:-2,
+        max: 2,
+        title:{
+            text:'AU',
+            style:{color:'#FFFFFF'},
+            rotation:0,
+            margin:25,
+        },
+        tickInterval:0.5,
+        minorTickInterval:10,
+        tickLength:3,
+        minorTickLength:0,
+        lineColor:'#ccc',
+        lineWidth:0,
+        labels:{style:{color:'#FFFFFF'}}
+    },
+    series: [{
+        name:'Earth',
+        color:'#185aa9',
+        marker:{
+            radius:1,
+            symbol:"url({{STATIC_URL}}img/earth.png)"
+        },
+        data: [
+                {% with mars_met_data.all|first as item %}
+                 {x:{{item.sol.earth_position.xAxis}},y:{{item.sol.earth_position.yAxis}},
+                 name:{{item.sol.earth_position.angle}}},
+                {% endwith %}
+        ],
+    }, {
+        name:'Mars',
+        color:'#FF0000',
+        marker:{
+            radius:1,
+            symbol:"url({{STATIC_URL}}img/mars.png)"
+        },
+        data: [
+                {% with mars_met_data.all|first as item %}
+                        {x:{{item.mars_position.xAxis}},y:{{item.mars_position.yAxis}},
+                        name:{{item.mars_position.angle}}},
+                {% endwith %}
+        ],
+    }, {
+          name:'Sun',
+          color:'#FF8000',
+          marker:{
+            radius:1,
+            symbol:"url({{STATIC_URL}}img/sun.png)"
+        },
+          data: [{x:0,y:0}]
+      },]
+});
+
+    var chart4 = new Highcharts.Chart({
+    chart: {
+        renderTo: 'bar_chart',
+        type: 'column',
+        borderWidth:3,
+        borderColor:'#000000',
+        marginLeft:90,
+        marginRight:50,
+        backgroundColor:'#DBA135',
+        plotBackgroundColor:'#F5F6CE',
+    },
+    credits:{enabled:false},
+    title:{text:'Mars Temperature and Pressure Data',style:{color:'#000000'}},
+    subtitle:{
+        text:'Selected Sol: ' + 
+                {% with mars_met_data.all|first as item %}
+                    {{item.sol}},
+                {% endwith %}
+        style:{color:'#000000', fontStyle:'italic'}
+    },
+    legend:{borderColor:'#000000',backgroundColor:'#F5F6CE', itemStyle:{color:'#000000', fontStyle:'italic'}},
+    tooltip: {
+        formatter: function() {
+            return '<b>' + this.series.name + ': ' + this.y + this.series.yAxis.axisTitle.text + '</b>';
+        }
+    },
+    xAxis: {
+        categories: ['Min Temp', 'Max Temp', 'Avg Temp', 'Pressure'],
+        labels: {enabled:false}
+    },
+    yAxis:[
+        {min:-90, max:10, title:{text:'\u00b0C', style: {color: '#000000'}}, labels: {style:{color:'#000000'}}},
+        {opposite: true, min:5, max:10, title: {text:'hPa', style: {color: '#000000'}}, labels: {style:{color:'#000000'}}}
+    ],
+    series: [{
+        name: 'Min Temp',
+        color:'#2E2EFE',
+        data: [
+                {% with mars_met_data.all|first as item %}
+                    {{item.min_temp|stringformat:".2f"|default:"null"}},
+                {% endwith %}
+        ],
+        dataLabels: {
+                    enabled: true,
+                    formatter: function() {
+                        return this.y + ' ' + this.series.yAxis.axisTitle.text;
+                    },
+                    rotation: -90,
+                    color: '#000000',
+                    align: 'right',
+                    x: 4,
+                    y: 4,
+                    style:{fontStyle:'bold'}
+        },
+        yAxis:0,
+        xAxis:0,
+    },{
+        name: 'Max Temp',
+        color:'#DF0101',
+        data: [
+                {% with mars_met_data.all|first as item %}
+                    {{item.max_temp|stringformat:".2f"|default:"null"}},
+                {% endwith %}
+        ],
+        dataLabels: {
+                    enabled: true,
+                    formatter: function() {
+                        return this.y + ' ' + this.series.yAxis.axisTitle.text;
+                    },
+                    rotation: -90,
+                    color: '#000000',
+                    align: 'left',
+                    x: 4,
+                    y: -4,
+                    style:{fontStyle:'bold'}
+        },
+        yAxis:0,
+        xAxis:0,
+    },{
+        name: 'Avg Temp',
+        color:'#088A4B',
+        data: [
+                {% with mars_met_data.all|first as item %}
+                    {{item.avg_temp|stringformat:".2f"|default:"null"}},
+                {% endwith %}
+        ],
+        dataLabels: {
+                    enabled: true,
+                    formatter: function() {
+                        return this.y + ' ' + this.series.yAxis.axisTitle.text;
+                    },
+                    rotation: -90,
+                    color: '#000000',
+                    align: 'right',
+                    x: 4,
+                    y: 4,
+                    style:{fontStyle:'bold'}
+        },
+        yAxis:0,
+        xAxis:0,
+    },{
+        name: 'Pressure',
+        color:'#000000',
+        data: [
+                {% with mars_met_data.all|first as item %}
+                    {{item.pressure|stringformat:".2f"|default:"null"}},
+                {% endwith %}
+        ],
+        dataLabels: {
+                    enabled: true,
+                    formatter: function() {
+                        return this.y + ' ' + this.series.yAxis.axisTitle.text;
+                    },
+                    rotation: -90,
+                    color: '#000000',
+                    align: 'left',
+                    x: 4,
+                    y: -4,
+                    style:{fontStyle:'bold'}
+        },
+        yAxis:1,
+        xAxis:0,
+    }]
+});
+
+</script>
